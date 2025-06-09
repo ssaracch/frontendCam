@@ -1,0 +1,133 @@
+/* Modern Camera Management Styles */
+/* Removed :root and replaced variables with their actual color values */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f7fa; /* from body background-color */
+    color: #212529; /* --dark-color */
+    line-height: 1.6;
+}
+
+/* Camera Component Specific Styles */
+.camera-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 24px;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    margin: 20px;
+}
+
+.camera-container video {
+    max-width: 100%;
+    max-height: 60vh;
+    background: #000;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.camera-container button {
+    padding: 12px 20px;
+    background: #2a8856; /* --success-color */
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.camera-container button:hover {
+    background: #184e31;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(76, 201, 240, 0.3);
+}
+
+.camera-container button:active {
+    transform: translateY(0);
+}
+
+
+.camera-buttons {
+    display: flex;
+    gap: 10px; /* space between buttons */
+    flex-wrap: wrap; /* allows wrapping on smaller screens */
+    justify-content: center; /* center-align if desired */
+}
+
+/* Dashboard Layout */
+.dashboard-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.user-profile:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.profile-img {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    margin-right: 12px;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.main-header {
+    height: 80px; /* --header-height */
+    background-color: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 0 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.main-header h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #212529; /* --dark-color */
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.content-container {
+    padding: 30px;
+    flex: 1;
+}

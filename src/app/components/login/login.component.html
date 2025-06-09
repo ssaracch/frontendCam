@@ -1,0 +1,40 @@
+<div class="login-dark">
+    <div class="login-card">
+      <div class="logo">
+        <img src="assets/images/logo/logo.png" alt="logo" class="img-fluid">
+
+    </div>
+      <div class="login-main">
+        <form class="theme-form" (ngSubmit)="onLogin()">
+          
+          <p>Enter your username and password to continue</p>
+  
+          <!-- Email Field -->
+          <div class="form-group">
+            <label class="col-form-label">username</label>
+            <input class="form-control" type="name" [(ngModel)]="username" name="name" required placeholder="username">
+          </div>
+  
+          <!-- Password Field -->
+          <div class="form-group position-relative">
+            <label class="col-form-label">Password</label>
+            <input class="form-control" [type]="show ? 'text' : 'password'" [(ngModel)]="password" name="password" required placeholder="*********">
+            <div  (click)="showPassword()">
+              <span [ngClass]="show ? 'Hide' : 'show'"></span>
+            </div>
+          </div>
+  
+          <!-- forgot password -->
+          <div class="form-group d-flex justify-content-between align-items-center mb-3">
+            
+            <a routerLink="/authentication/forgot-password" class="link">Forgot password?</a>
+          </div>
+  
+          <!-- Sign in button -->
+          <button class="btn btn-primary" type="submit">Sign in</button>
+          
+        </form>
+      </div>
+    </div>
+  </div>
+  

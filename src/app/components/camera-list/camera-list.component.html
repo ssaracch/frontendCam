@@ -1,0 +1,250 @@
+<div class="dashboard-container">
+  <main class="main-content" style="width: 100%;">
+    <header class="main-header">
+      <h1>Gestion des Caméras</h1>
+      <div class="header-actions">
+        <div class="search-bar">
+          <input
+            type="text"
+            placeholder="Rechercher une caméra..."
+            [(ngModel)]="searchTerm" 
+            (input)="filterCameras()"/>
+          <i class="fas fa-search"></i>
+        </div>
+      </div>
+    </header>
+
+    <div class="content-container">
+      <div class="stats-cards">
+        <div class="stat-card">
+          <div class="stat-icon normal"><i class="fas fa-video"></i></div>
+          <div class="stat-info">
+            <h3>{{ statusCounts.normal || 0 }}</h3>
+            <p>Caméras actives</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon offline"><i class="fas fa-video-slash"></i></div>
+          <div class="stat-info">
+            <h3>{{ statusCounts.offline || 0 }}</h3>
+            <p>Caméras offline</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon blurry"><i class="fas fa-eye-slash"></i></div>
+          <div class="stat-info">
+            <h3>{{ statusCounts.blurry || 0 }}</h3>
+            <p>Caméras floues</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <div class="table-header">
+          <h2>Toutes les Caméras</h2>
+          <div class="table-actions">
+            <select [(ngModel)]="selectedStatus" (change)="filterCameras()">
+              <option value="all">Tous les statuts</option>
+              <option value="normal">Normal</option>
+              <option value="offline">Offline</option>
+              <option value="blurry">Flou</option>
+            </select>
+            <button class="btn btn-secondary" (click)="openAddModal(cameraModal)">
+              <i class="fas fa-plus"></i> Ajouter
+            </button>
+            <button class="btn btn-outline-secondary">
+              <i class="fas fa-download"></i> Exporter
+            </button>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nom</th>
+                <th>Localisation</th>
+                <th>IP</th>
+                <th>MAC</th>
+                <th>Statut</th>
+                <th>Utilisateur</th>
+                <th>Groupe</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let camera of filteredCameras">
+                <td>{{ camera.idCamera }}</td>
+                <td>{{ camera.nomCamera }}</td>
+                <td>{{ camera.location }}</td>
+                <td>{{ camera.ipAdress }}</td>
+                <td>{{ camera.macAdress }}</td>
+                <td>
+                  <span
+                    class="status-badge"
+                    [ngClass]="'status-' + camera.statusCamera"
+                    >{{ camera.statusCamera }}</span
+                  >
+                </td>
+                <td>{{ camera.user?.nomUser || 'N/A' }}</td>
+                <td>{{ camera.groupe?.nomGroupe || 'N/A' }}</td>
+                <td>
+                  <button
+                    class="btn btn-warning btn-sm"
+                    (click)="openEditModal(cameraModal, camera)"
+                  >
+                    <i class="fas fa-edit"></i> Modifier
+                  </button>
+                  <button
+                    class="btn btn-danger btn-sm"
+                    (click)="deleteCamera(camera)"
+                  >
+                    <i class="fas fa-trash"></i> Supprimer
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal -->
+<ng-template #cameraModal let-modal>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h4 class="modal-title">
+        {{ isEditMode ? 'Modifier' : 'Ajouter' }} une caméra
+      </h4>
+      <button type="button" class="close" (click)="modal.dismiss()">
+        <span>&times;</span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form [formGroup]="cameraForm" (ngSubmit)="saveCamera()">
+        <div class="form-group">
+          <label>Nom de la caméra</label>
+          <input type="text" class="form-control" formControlName="nomCamera" />
+          <div
+            class="error-message"
+            *ngIf="
+              cameraForm.get('nomCamera')?.invalid &&
+              cameraForm.get('nomCamera')?.touched
+            "
+          >
+            {{ getErrorMessage('nomCamera') }}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Localisation</label>
+          <input type="text" class="form-control" formControlName="location" />
+          <div
+            class="error-message"
+            *ngIf="
+              cameraForm.get('location')?.invalid &&
+              cameraForm.get('location')?.touched
+            "
+          >
+            {{ getErrorMessage('location') }}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Adresse IP</label>
+          <input type="text" class="form-control" formControlName="ipAdress" />
+          <div
+            class="error-message"
+            *ngIf="
+              cameraForm.get('ipAdress')?.invalid &&
+              cameraForm.get('ipAdress')?.touched
+            "
+          >
+            {{ getErrorMessage('ipAdress') }}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Adresse MAC</label>
+          <input
+            type="text"
+            class="form-control"
+            formControlName="macAdress"
+          />
+          <div
+            class="error-message"
+            *ngIf="
+              cameraForm.get('macAdress')?.invalid &&
+              cameraForm.get('macAdress')?.touched
+            "
+          >
+            {{ getErrorMessage('macAdress') }}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Statut</label>
+          <select class="form-control" formControlName="statusCamera">
+            <option value="" disabled>Choisir un statut</option>
+            <option value="normal">Normal</option>
+            <option value="offline">Hors ligne</option>
+            <option value="blurry">Floue</option>
+          </select>
+          <div
+            class="error-message"
+            *ngIf="
+              cameraForm.get('statusCamera')?.invalid &&
+              cameraForm.get('statusCamera')?.touched
+            "
+          >
+            {{ getErrorMessage('statusCamera') }}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Utilisateur ID</label>
+          <input type="number" class="form-control" formControlName="user" />
+          <div
+            class="error-message"
+            *ngIf="
+              cameraForm.get('user')?.invalid &&
+              cameraForm.get('user')?.touched
+            "
+          >
+            {{ getErrorMessage('user') }}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Groupe ID</label>
+          <input type="number" class="form-control" formControlName="groupe" />
+          <div
+            class="error-message"
+            *ngIf="
+              cameraForm.get('groupe')?.invalid &&
+              cameraForm.get('groupe')?.touched
+            "
+          >
+            {{ getErrorMessage('groupe') }}
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            (click)="modal.dismiss()"
+          >
+            Annuler
+          </button>
+          <button type="submit" class="btn btn-primary">
+            {{ isEditMode ? 'Modifier' : 'Enregistrer' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</ng-template>

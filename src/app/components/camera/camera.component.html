@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Camera</title>
+  <style>
+    .dashboard-container {
+      padding: 20px;
+      background-color: #f8f9fa;
+      font-family: Arial, sans-serif;
+    }
+    .main-header {
+      margin-bottom: 20px;
+    }
+    video {
+      width: 320px;
+      height: 240px;
+      border: 2px solid #000;
+      border-radius: 10px;
+    }
+    .camera-buttons {
+      margin-top: 10px;
+    }
+    .camera-buttons button {
+      margin-right: 10px;
+      padding: 8px 16px;
+      border: none;
+      background-color: hwb(117 4% 64%);
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .camera-buttons button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: hsl(127, 89%, 25%);
+      color: white;
+    }
+    img {
+      max-width: 100px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+    <main class="main-content" style="width: 100%;">
+      <header class="main-header">
+        <h1>Camera</h1>
+      </header>
+
+      <!-- Camera Feed -->
+      <div class="camera-container">
+        <video #videoElement autoplay playsinline></video>
+        <canvas #canvasElement style="display: none;"></canvas>
+
+        <!-- Camera Controls -->
+        <div class="camera-buttons">
+          <button (click)="startCamera()">Start Camera</button>
+          <button (click)="stopCamera()" *ngIf="isCameraOn">Stop Camera</button>
+          <button (click)="Captureframe()" *ngIf="isCameraOn">Capture Frame</button>
+        </div>
+
+        <!-- Prediction History Table -->
+        <div class="result-table" *ngIf="predictionHistory.length > 0">
+          <h3>Historique des Prédictions</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Image</th>
+                <th>État</th>
+                <th>Confiance</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let result of predictionHistory">
+                <td><img [src]="result.image" alt="Captured Frame" /></td>
+                <td>{{ result.label }}</td>
+                <td>{{ result.confidence }}%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
