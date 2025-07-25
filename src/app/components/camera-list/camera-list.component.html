@@ -52,7 +52,8 @@
             <button class="btn btn-secondary" (click)="openAddModal(cameraModal)">
               <i class="fas fa-plus"></i> Ajouter
             </button>
-            <button class="btn btn-outline-secondary">
+            <!-- FIXED: Added click handler for export -->
+            <button class="btn btn-outline-secondary" (click)="exportCameras()">
               <i class="fas fa-download"></i> Exporter
             </button>
           </div>
@@ -97,11 +98,11 @@
                     <i class="fas fa-edit"></i> Modifier
                   </button>
                   <button
-                    class="btn btn-danger btn-sm"
-                    (click)="deleteCamera(camera)"
-                  >
-                    <i class="fas fa-trash"></i> Supprimer
-                  </button>
+                      class="btn btn-danger btn-sm"
+                      (click)="deleteCamera(camera)"
+                      type="button">
+                      <i class="fas fa-trash"></i> Supprimer
+                    </button>
                 </td>
               </tr>
             </tbody>
@@ -111,6 +112,9 @@
     </div>
   </main>
 </div>
+
+
+
 
 <!-- Modal -->
 <ng-template #cameraModal let-modal>
@@ -125,6 +129,12 @@
     </div>
     <div class="modal-body">
       <form [formGroup]="cameraForm" (ngSubmit)="saveCamera()">
+
+        <div class="form-group">
+          <label>Utilisateur ID</label>
+          <input type="number" class="form-control" formControlName="user" readonly />
+        </div>
+
         <div class="form-group">
           <label>Nom de la caméra</label>
           <input type="text" class="form-control" formControlName="nomCamera" />
@@ -204,23 +214,14 @@
           </div>
         </div>
 
-        <div class="form-group">
-          <label>Utilisateur ID</label>
-          <input type="number" class="form-control" formControlName="user" />
-          <div
-            class="error-message"
-            *ngIf="
-              cameraForm.get('user')?.invalid &&
-              cameraForm.get('user')?.touched
-            "
-          >
-            {{ getErrorMessage('user') }}
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>Groupe ID</label>
-          <input type="number" class="form-control" formControlName="groupe" />
+                <div class="form-group">
+          <label>Groupe</label>
+          <select class="form-control" formControlName="groupe">
+            <option value="" disabled>Choisir un groupe</option>
+            <option *ngFor="let group of groups" [value]="group.id_Groupe">
+              {{ group.nom_Groupe }} (ID: {{ group.id_Groupe }})
+            </option>
+          </select>
           <div
             class="error-message"
             *ngIf="
@@ -231,6 +232,8 @@
             {{ getErrorMessage('groupe') }}
           </div>
         </div>
+                
+
 
         <div class="modal-footer">
           <button
@@ -240,7 +243,12 @@
           >
             Annuler
           </button>
-          <button type="submit" class="btn btn-primary">
+          <!-- FIXED: Disabled state when form is invalid -->
+          <button 
+            type="submit" 
+            class="btn btn-primary"
+            [disabled]="cameraForm.invalid"
+          >
             {{ isEditMode ? 'Modifier' : 'Enregistrer' }}
           </button>
         </div>

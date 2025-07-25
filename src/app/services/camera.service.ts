@@ -19,11 +19,11 @@ export class CameraService {
     return this.http.post<Camera>(this.apiUrl, camera);
   }
 
-  updateCamera(id: string, camera: Camera): Observable<Camera> {
+  updateCamera(id: number, camera: Camera): Observable<Camera> {
     return this.http.put<Camera>(`${this.apiUrl}/${id}`, camera);
   }
 
-  deleteCamera(id: string): Observable<void> {
+  deleteCamera(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
@@ -33,5 +33,9 @@ export class CameraService {
 
   getCameraStats(): Observable<{ total: number; online: number; offline: number }> {
     return this.http.get<{ total: number; online: number; offline: number }>(`${this.apiUrl}/stats`);
+  }
+
+    getOfflineOrBlurryCameras(): Observable<Camera[]> {
+    return this.http.get<Camera[]>(`${this.apiUrl}/status/offline-or-blurry`);
   }
 }

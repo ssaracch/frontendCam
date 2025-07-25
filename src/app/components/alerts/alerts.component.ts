@@ -1,182 +1,208 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { AlertsHistory, AlertsHistoryService } from '../../services/alert-history.service';
+import { Camera } from '../../models/camera';
+import { CameraService } from '../../services/camera.service';
+import { Subscription, interval } from 'rxjs';
 
 @Component({
   selector: 'app-alerts',
-  standalone: false,
   templateUrl: './alerts.component.html',
+  standalone: false,
   styleUrls: ['./alerts.component.css']
 })
-export class AlertsComponent implements OnInit {
+export class AlertsComponent implements OnInit, OnDestroy {
+
   alerts: AlertsHistory[] = [];
   filteredAlerts: AlertsHistory[] = [];
-  searchTerm = '';
-  selectedSeverity = 'all';
-  selectedAlert: AlertsHistory | null = null;
-  page = 1;
-  pageSize = 10;
-  sortColumn: string = '';
-  sortDirection: 'asc' | 'desc' = 'asc';
+  unifiedAlerts: any[] = [];
+  currentDate: Date = new Date();
 
-  // Severity mapping based on alert types
-  private severityMap: { [key: string]: string } = {
-    'motion': 'Low',
-    'intrusion': 'High',
-    'offline': 'High',
-    'tampering': 'High',
-    'sound': 'Medium',
-    'fire': 'High',
-    'smoke': 'High',
-    'default': 'Medium'
-  };
+  searchTerm: string = '';
+  selectedAlertType: string = 'all';
+  page: number = 1;
+  pageSize: number = 10;
+  sortColumn: string = 'start_alert';
+  sortDirection: 'asc' | 'desc' = 'desc';
 
-  constructor(private alertsService: AlertsHistoryService) {}
+  private refreshSubscription: Subscription = new Subscription();
+
+  constructor(
+    private alertsService: AlertsHistoryService,
+    private cameraService: CameraService
+  ) {}
 
   ngOnInit(): void {
-    this.loadAlerts();
+    this.loadData();
+    // Auto-refresh every 30 seconds to catch camera status changes
+    this.refreshSubscription = interval(30000).subscribe(() => {
+      this.loadData();
+    });
   }
 
-  loadAlerts(): void {
+  ngOnDestroy(): void {
+    if (this.refreshSubscription) {
+      this.refreshSubscription.unsubscribe();
+    }
+  }
+
+  loadData(): void {
+    // Load ALL alert history (both resolved and unresolved)
     this.alertsService.getAlertsHistory().subscribe({
-      next: (data) => {
-        this.alerts = data;
-        this.applyFilters();
+      next: (alerts) => {
+        console.log('Loaded alerts:', alerts); // Debug log
+        this.alerts = alerts;
+        this.generateUnifiedAlerts();
       },
-      error: (error) => {
-        console.error('Error loading alerts:', error);
-      }
+      error: (error) => console.error('Error loading alerts:', error)
     });
   }
 
   refreshData(): void {
-    this.loadAlerts();
+    this.loadData();
   }
 
-  // Apply search and severity filters
-  applyFilters(): void {
-    let filtered = [...this.alerts];
+  generateUnifiedAlerts(): void {
+    // Convert all alerts to unified format
+    const unifiedAlerts = this.alerts.map(alert => {
+      console.log('Processing alert:', alert); // Debug log
+      
+      return {
+        // User information from alert.user
+        id_User: alert.user?.id_User || '-',
+        nom_User: alert.user?.nom_User || '-',
+        
+        // Camera information from alert.camera
+        idCamera: alert.camera?.idCamera || '-',
+        nomCamera: alert.camera?.nomCamera || '-',
+        location: alert.camera?.location || '-',
+        
+        // Alert information
+        type: alert.alert?.type || '-',
+        start_alert: alert.start_alert ? new Date(alert.start_alert) : null,
+        performed_at: alert.performed_at ? new Date(alert.performed_at) : null,
+        
+        // Status indicators
+        isResolved: !!alert.performed_at,
+        isOngoing: !alert.performed_at
+      };
+    });
+
+    console.log('Unified alerts:', unifiedAlerts); // Debug log
+
+    // Apply filters
+    this.applyFiltersToUnified(unifiedAlerts);
+  }
+
+  applyFiltersToUnified(alerts: any[]): void {
+    let filtered = [...alerts];
 
     // Apply search filter
     if (this.searchTerm.trim()) {
       const term = this.searchTerm.toLowerCase();
       filtered = filtered.filter(alert =>
-        alert.camera.nomCamera.toLowerCase().includes(term) ||
-        alert.alert.type.toLowerCase().includes(term) ||
-        alert.camera.location.toLowerCase().includes(term) ||
-        alert.user.nom_User.toLowerCase().includes(term)
+        (alert.nomCamera && alert.nomCamera.toString().toLowerCase().includes(term)) ||
+        (alert.type && alert.type.toString().toLowerCase().includes(term)) ||
+        (alert.location && alert.location.toString().toLowerCase().includes(term)) ||
+        (alert.nom_User && alert.nom_User.toString().toLowerCase().includes(term)) ||
+        (alert.id_User && alert.id_User.toString().toLowerCase().includes(term)) ||
+        (alert.idCamera && alert.idCamera.toString().toLowerCase().includes(term))
       );
     }
 
-    // Apply severity filter
-    if (this.selectedSeverity !== 'all') {
-      filtered = filtered.filter(alert => 
-        this.getSeverity(alert.alert.type) === this.selectedSeverity
+    // Apply alert type filter
+    if (this.selectedAlertType !== 'all') {
+      filtered = filtered.filter(alert =>
+        alert.type && alert.type.toString().toLowerCase() === this.selectedAlertType.toLowerCase()
       );
     }
 
-    this.filteredAlerts = filtered;
-    this.page = 1; // Reset to first page when filters change
+    // Sort the filtered results
+    this.sortUnifiedAlerts(filtered);
+    
+    // Reset pagination
+    this.page = 1;
   }
 
-  // Get severity level for an alert type
-  getSeverity(alertType: string): string {
-    return this.severityMap[alertType.toLowerCase()] || this.severityMap['default'];
+  sortUnifiedAlerts(alerts: any[]): void {
+    alerts.sort((a, b) => {
+      let aVal, bVal;
+
+      switch (this.sortColumn) {
+        case 'start_alert':
+          aVal = a.start_alert ? a.start_alert.getTime() : 0;
+          bVal = b.start_alert ? b.start_alert.getTime() : 0;
+          break;
+        case 'performed_at':
+          aVal = a.performed_at ? a.performed_at.getTime() : 0;
+          bVal = b.performed_at ? b.performed_at.getTime() : 0;
+          break;
+        case 'id_User':
+          aVal = a.id_User ? a.id_User.toString() : '';
+          bVal = b.id_User ? b.id_User.toString() : '';
+          break;
+        case 'idCamera':
+          aVal = a.idCamera ? a.idCamera.toString() : '';
+          bVal = b.idCamera ? b.idCamera.toString() : '';
+          break;
+        case 'location':
+          aVal = a.location || '';
+          bVal = b.location || '';
+          break;
+        default:
+          aVal = a[this.sortColumn] ? a[this.sortColumn].toString() : '';
+          bVal = b[this.sortColumn] ? b[this.sortColumn].toString() : '';
+      }
+
+      if (aVal < bVal) return this.sortDirection === 'asc' ? -1 : 1;
+      if (aVal > bVal) return this.sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    this.unifiedAlerts = alerts;
   }
 
-  // Count alerts by severity
-  countBySeverity(severity: string): number {
-    return this.alerts.filter(alert => 
-      this.getSeverity(alert.alert.type) === severity
-    ).length;
+  filterAlerts(): void {
+    this.generateUnifiedAlerts();
   }
 
-  filterBySeverity(): void {
-    this.applyFilters();
+  onSearchChange(): void {
+    this.generateUnifiedAlerts();
   }
 
-  // Get paginated items
-  pagedItems(): AlertsHistory[] {
-    if (this.sortColumn) {
-      this.filteredAlerts = [...this.filteredAlerts].sort((a, b) => {
-        let aVal: any, bVal: any;
-        
-        switch (this.sortColumn) {
-          case 'userName':
-            aVal = a.user.nom_User;
-            bVal = b.user.nom_User;
-            break;
-          case 'cameraName':
-            aVal = a.camera.nomCamera;
-            bVal = b.camera.nomCamera;
-            break;
-          case 'location':
-            aVal = a.camera.location;
-            bVal = b.camera.location;
-            break;
-          case 'alertType':
-            aVal = a.alert.type;
-            bVal = b.alert.type;
-            break;
-          case 'alertDate':
-            aVal = new Date(a.start_alert);
-            bVal = new Date(b.start_alert);
-            break;
-          case 'performedAt':
-            aVal = new Date(a.performed_at);
-            bVal = new Date(b.performed_at);
-            break;
-          default:
-            return 0;
-        }
-
-        if (aVal < bVal) return this.sortDirection === 'asc' ? -1 : 1;
-        if (aVal > bVal) return this.sortDirection === 'asc' ? 1 : -1;
-        return 0;
-      });
-    }
-
+  pagedItems(): any[] {
     const start = (this.page - 1) * this.pageSize;
-    return this.filteredAlerts.slice(start, start + this.pageSize);
+    return this.unifiedAlerts.slice(start, start + this.pageSize);
   }
 
-  // Pagination methods
   totalPages(): number {
-    return Math.ceil(this.filteredAlerts.length / this.pageSize) || 1;
+    return Math.ceil(this.unifiedAlerts.length / this.pageSize) || 1;
   }
 
   totalPagesArray(): number[] {
-    const total = this.totalPages();
-    return Array.from({ length: total }, (_, i) => i + 1);
-  }
-
-  nextPage(): void {
-    if (this.page < this.totalPages()) {
-      this.page++;
-    }
+    return Array.from({ length: this.totalPages() }, (_, i) => i + 1);
   }
 
   prevPage(): void {
-    if (this.page > 1) {
-      this.page--;
-    }
+    if (this.page > 1) this.page--;
   }
 
-  goToPage(pageNumber: number): void {
-    if (pageNumber >= 1 && pageNumber <= this.totalPages()) {
-      this.page = pageNumber;
-    }
+  nextPage(): void {
+    if (this.page < this.totalPages()) this.page++;
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages()) this.page = page;
   }
 
   getStartIndex(): number {
-    return (this.page - 1) * this.pageSize;
+    return this.unifiedAlerts.length === 0 ? 0 : (this.page - 1) * this.pageSize;
   }
 
   getEndIndex(): number {
-    const endIndex = this.page * this.pageSize;
-    return Math.min(endIndex, this.filteredAlerts.length);
+    const end = this.page * this.pageSize;
+    return end > this.unifiedAlerts.length ? this.unifiedAlerts.length : end;
   }
 
-  // Sorting
   sort(column: string): void {
     if (this.sortColumn === column) {
       this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
@@ -184,66 +210,55 @@ export class AlertsComponent implements OnInit {
       this.sortColumn = column;
       this.sortDirection = 'asc';
     }
+
+    this.sortUnifiedAlerts([...this.unifiedAlerts]);
   }
 
-  // Modal methods
-  viewDetails(alert: AlertsHistory): void {
-    this.selectedAlert = alert;
-  }
-
-  closeModal(): void {
-    this.selectedAlert = null;
-  }
-
-  acknowledge(alert: AlertsHistory): void {
-    // Here you would typically call an API to acknowledge the alert
-    console.log('Acknowledging alert:', alert);
-    // You could add a service method to update the alert status
-    // For now, just close the modal if it's open
-    if (this.selectedAlert === alert) {
-      this.closeModal();
+  getStatusClass(status: string): string {
+    if (!status) return '';
+    
+    const statusLower = status.toString().toLowerCase();
+    switch (statusLower) {
+      case 'offline':
+        return 'status-offline';
+      case 'flou':
+      case 'blurry':
+        return 'status-blurry';
+      case 'online':
+      case 'normal':
+        return 'status-online';
+      default:
+        return 'status-default';
     }
   }
 
-  // Export to CSV
   exportToCSV(): void {
-    const headers = ['Utilisateur', 'Caméra', 'Localisation', 'Type d\'Alerte', 'Date début', 'Date d\'exécution'];
-    const csvContent = [
+    const headers = ['ID Utilisateur', 'Nom Utilisateur', 'ID Caméra', 'Nom Caméra', 'Localisation', 'Type/Statut', 'Date début', 'Date d\'exécution', 'Statut'];
+    const csvRows = [
       headers.join(','),
-      ...this.filteredAlerts.map(alert => [
-        alert.user.nom_User,
-        alert.camera.nomCamera,
-        alert.camera.location,
-        alert.alert.type,
-        new Date(alert.start_alert).toLocaleString(),
-        new Date(alert.performed_at).toLocaleString()
+      ...this.unifiedAlerts.map(entry => [
+        `"${entry.id_User ?? '-'}"`,
+        `"${entry.nom_User ?? '-'}"`,
+        `"${entry.idCamera ?? '-'}"`,
+        `"${entry.nomCamera ?? '-'}"`,
+        `"${entry.location ?? '-'}"`,
+        `"${entry.type ?? '-'}"`,
+        entry.start_alert ? `"${entry.start_alert.toLocaleString()}"` : '"-"',
+        entry.performed_at ? `"${entry.performed_at.toLocaleString()}"` : '"-"',
+        entry.isResolved ? '"Résolu"' : '"En cours"'
       ].join(','))
-    ].join('\n');
-
+    ];
+    
+    const csvContent = csvRows.join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `alerts_history_${new Date().toISOString().split('T')[0]}.csv`);
+    link.href = url;
+    link.download = `alerts_history_${new Date().toISOString().split('T')[0]}.csv`;
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  }
-
-  // Trigger search when user types
-  onSearchChange(): void {
-    this.applyFilters();
-  }
-
-  // Get severity CSS class for styling
-  getSeverityClass(alertType: string): string {
-    const severity = this.getSeverity(alertType);
-    switch (severity) {
-      case 'High': return 'danger';
-      case 'Medium': return 'avg';
-      case 'Low': return 'minor';
-      default: return 'avg';
-    }
+    URL.revokeObjectURL(url);
   }
 }
