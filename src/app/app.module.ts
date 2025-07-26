@@ -3,6 +3,7 @@ import { BrowserModule } from '@angular/platform-browser';
 
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
+import { RouterModule } from '@angular/router'; // Make sure this is imported
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { LoginComponent } from './components/login/login.component';
@@ -28,6 +29,7 @@ import { HttpClientModule } from '@angular/common/http';
   imports: [
     BrowserModule,
     AppRoutingModule,
+    RouterModule, // Add this if missing
     FormsModule,
     NgApexchartsModule,
     NgbModule,

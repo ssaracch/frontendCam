@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { GlobalCameraService } from './services/global-camera.service';
 
 @Component({
   selector: 'app-root',
@@ -8,4 +9,11 @@ import { Component } from '@angular/core';
 })
 export class AppComponent {
   title = 'camproject';
+
+   constructor(private globalCameraService: GlobalCameraService) {}
+
+  ngOnDestroy() {
+    // Clean up global camera service when app closes
+    this.globalCameraService.destroy();
+  }
 }

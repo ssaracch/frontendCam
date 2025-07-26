@@ -55,47 +55,86 @@
     }
   </style>
 </head>
-<body>
-  <div class="dashboard-container">
-    <main class="main-content" style="width: 100%;">
-      <header class="main-header">
-        <h1>Camera</h1>
-      </header>
+<div class="dashboard-container">
+  <main class="main-content" style="width: 100%;">
+    <header class="main-header">
+      <h1>Camera Interface</h1>
+    </header>
 
-      <!-- Camera Feed -->
-      <div class="camera-container">
-        <video #videoElement autoplay playsinline></video>
-        <canvas #canvasElement style="display: none;"></canvas>
+    <!-- Camera Status Display -->
+    <div class="camera-status" [ngClass]="getStatusColorClass()">
+      <strong>Status Actuel: {{ getCurrentStatus() | uppercase }}</strong>
+      <span *ngIf="isCameraOn" class="auto-monitoring-indicator"></span>
+      <span *ngIf="isCameraOn">(Surveillance automatique active)</span>
+    </div>
 
-        <!-- Camera Controls -->
-        <div class="camera-buttons">
-          <button (click)="startCamera()">Start Camera</button>
-          <button (click)="stopCamera()" *ngIf="isCameraOn">Stop Camera</button>
-          <button (click)="Captureframe()" *ngIf="isCameraOn">Capture Frame</button>
+    <!-- Camera Feed -->
+    <div class="camera-container">
+      <video #videoElement autoplay playsinline></video>
+      <canvas #canvasElement style="display: none;"></canvas>
+
+      <!-- Camera Controls -->
+      <div class="camera-buttons">
+        <button (click)="startCamera()" [disabled]="isCameraOn">Start Camera</button>
+        <button (click)="stopCamera()" *ngIf="isCameraOn" class="stop-btn">Stop Camera</button>
+        <button (click)="captureFrame()" *ngIf="isCameraOn" class="capture-btn">Capture Frame</button>
+      </div>
+
+      <!-- Live Camera Information -->
+      <div class="live-info" *ngIf="isCameraOn">
+        <h4>Informations en Temps Réel</h4>
+        <div class="info-row">
+          <span class="info-label">Dernière Prédiction:</span>
+          <span class="info-value">{{ predictionResult || 'En attente...' }}</span>
         </div>
-
-        <!-- Prediction History Table -->
-        <div class="result-table" *ngIf="predictionHistory.length > 0">
-          <h3>Historique des Prédictions</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Image</th>
-                <th>État</th>
-                <th>Confiance</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let result of predictionHistory">
-                <td><img [src]="result.image" alt="Captured Frame" /></td>
-                <td>{{ result.label }}</td>
-                <td>{{ result.confidence }}%</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="info-row">
+          <span class="info-label">Confiance:</span>
+          <span class="info-value">{{ confidence ? confidence + '%' : 'En attente...' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Dernière Mise à Jour:</span>
+          <span class="info-value">{{ getLastUpdateTime() }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Surveillance Auto:</span>
+          <span class="info-value">✓ Active (toutes les 10 secondes)</span>
         </div>
       </div>
-    </main>
-  </div>
-</body>
+
+      <!-- Camera Offline Info -->
+      <div class="live-info" *ngIf="!isCameraOn">
+        <h4>Caméra Hors Ligne</h4>
+        <p>Cliquez sur "Start Camera" pour commencer la surveillance automatique.</p>
+        <p><strong>Note:</strong> Une fois démarrée, la caméra continuera à fonctionner même si vous naviguez vers d'autres pages.</p>
+      </div>
+
+      <!-- Manual Capture History Table -->
+      <div class="result-table" *ngIf="predictionHistory.length > 0">
+        <h3>Historique des Captures Manuelles</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Image</th>
+              <th>État</th>
+              <th>Confiance</th>
+              <th>Heure</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let result of predictionHistory">
+              <td><img [src]="result.image" alt="Captured Frame" /></td>
+              <td>
+                <span [ngClass]="'status-badge status-' + (result.label === 'Clear' ? 'normal' : 'blurry')">
+                  {{ result.label }}
+                </span>
+              </td>
+              <td>{{ result.confidence }}%</td>
+              <td>{{ result.timestamp | date:'short' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
 </html>

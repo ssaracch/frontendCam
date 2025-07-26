@@ -39,11 +39,15 @@ export class CameraListComponent implements OnInit {
     this.initializeForm();
   }
 
-  ngOnInit(): void {
-    this.loadCameras();
-    this.loadStatusCounts();
-    this.loadGroups();
-  }
+  
+ngOnInit(): void {
+  this.loadCameras();
+  this.loadStatusCounts();
+  this.loadGroups();
+  
+  // Start real-time monitoring every 3 seconds for better responsiveness
+  this.startRealTimeMonitoring();
+}
 
   private initializeForm(): void {
     const connectedUserId = localStorage.getItem('userId') || '';
@@ -79,15 +83,32 @@ export class CameraListComponent implements OnInit {
     });
   }
 
-  loadCameras(): void {
-    this.cameraService.getAllCameras().subscribe({
-      next: data => {
-        this.cameras = data;
-        this.filterCameras();
-      },
-      error: err => console.error('Erreur chargement caméras:', err)
-    });
-  }
+  // Replace your existing loadCameras() method in CameraListComponent with this:
+
+loadCameras(): void {
+  console.log('Loading cameras...'); // Debug log
+  
+  // Use AI-integrated endpoint to get cameras with real-time status
+  this.cameraService.getAllCamerasWithAI().subscribe({
+    next: data => {
+      console.log('Cameras loaded with AI integration:', data); // Debug log
+      this.cameras = data;
+      this.filterCameras();
+      this.loadStatusCounts(); // Also refresh status counts
+    },
+    error: err => {
+      console.error('Error loading cameras AI:', err);
+      // Fallback to regular endpoint if AI endpoint fails
+      this.cameraService.getAllCameras().subscribe({
+        next: data => {
+          this.cameras = data;
+          this.filterCameras();
+        },
+        error: fallbackErr => console.error('Error loading cameras regular:', fallbackErr)
+      });
+    }
+  });
+}
 
   getErrorMessage(field: string): string {
     const control = this.cameraForm.get(field);
@@ -234,6 +255,31 @@ export class CameraListComponent implements OnInit {
       console.error('Erreur export:', error);
     }
   }
+
+
+    private refreshInterval: any;
+
+private startRealTimeMonitoring(): void {
+  this.refreshInterval = setInterval(() => {
+    this.loadCameras();
+    this.loadStatusCounts();  
+  }, 3000); // Check every 3 seconds
+}
+
+ngOnDestroy(): void {
+  if (this.refreshInterval) {
+    clearInterval(this.refreshInterval);
+  }
+}
+
+refreshData(): void {
+  console.log('Refreshing camera data...');
+  this.loadCameras();
+  this.loadStatusCounts();
+}
+
+
+
 
   private convertToCSV(data: any[]): string {
     if (data.length === 0) return '';
