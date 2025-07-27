@@ -25,7 +25,7 @@ export class GlobalCameraService {
   // Camera configuration
   private readonly CAMERA_ID = 1;
   private readonly USER_ID = parseInt(localStorage.getItem('userId') || '1');
-  private readonly MONITORING_INTERVAL = 10000; // 10 seconds
+  private readonly MONITORING_INTERVAL = 5000; // 5 seconds
   private readonly STATUS_CHECK_INTERVAL = 30000; // 30 seconds - less frequent
 
   // Status tracking
